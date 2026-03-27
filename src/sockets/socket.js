@@ -23,22 +23,22 @@ export const initSocket = (io) => {
       // MESSAGE EVENT
       socket.on("send_message", async (data) => {
         const { chatId, receiverId, content } = data;
-
+        console.log("Incoming send_message:", { chatId, receiverId, sender: userId });
         const message = await Message.create({
           chatId,
           sender: userId,
           content,
           status: "sent"
         });
-
+        console.log("Message saved:", message._id);
         // 🔥 Get receiver socket from Redis
         const receiverSocket = await redis.get(`user:${receiverId}`);
-
+        console.log("Receiver socket lookup:", receiverId, "→", receiverSocket);
         if (receiverSocket) {
           message.status = "delivered";
           await message.save();
-        
           io.to(receiverSocket).emit("receive_message", message);
+          console.log("Delivered to:", receiverSocket);
         }
       });
 
